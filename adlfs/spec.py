@@ -545,9 +545,15 @@ class AzureBlobFileSystem(AsyncFileSystem):
                     conn_str=self.connection_string
                 )
             elif self.account_name:
-                self.account_url: str = (
-                    f"https://{self.account_name}.blob.core.windows.net"
-                )
+                if hasattr(self, 'account_host'):
+                    print(f"adlfs/spec.py connecting to {self.account_host}")
+                    self.account_url: str = (
+                        f"https://{self.account_host}"
+                    )
+                else:
+                    self.account_url: str = (
+                        f"https://{self.account_name}.blob.core.windows.net"
+                    )
                 creds = [self.credential, self.account_key]
                 if any(creds):
                     self.service_client = [
@@ -854,7 +860,7 @@ class AzureBlobFileSystem(AsyncFileSystem):
                                                 outblobs.append(blob_)
                                             elif (
                                                 blob_["name"].count("/") == depth
-                                                and blob_["size"] == 0
+                                                and (hasattr(blob_, "size") and blob_["size"] == 0)
                                             ):
                                                 outblobs.append(blob_)
                                             else:
@@ -1843,10 +1849,15 @@ class AzureBlobFile(AbstractBufferedFile):
         ValueError if none of the connection details are available
         """
         try:
-
-            self.fs.account_url: str = (
-                f"https://{self.fs.account_name}.blob.core.windows.net"
-            )
+            if hasattr(self.fs, 'account_host'):
+                print(f"#### AzureBlobFile: connecting to {self.fs.account_host}")
+                self.fs.account_url: str = (
+                    f"https://{self.fs.account_host}"
+                )
+            else:
+                self.fs.account_url: str = (
+                    f"https://{self.fs.account_name}.blob.core.windows.net"
+                )
             creds = [self.fs.sync_credential, self.fs.account_key, self.fs.credential]
             if any(creds):
                 self.container_client = [
